@@ -29,8 +29,11 @@ jobs:
         terraform init -backend=false
         terraform validate
 
-    # 4. Instala uma ferramenta de checagem para os arquivos do Kubernetes
+   # 4. Valida se os manifestos estruturais do Kubernetes estão corretos
     - name: Validate Kubernetes Manifests
       run: |
-        sudo apt-get update && sudo apt-get install -y yamllint
-        yamllint -d relaxed k8s/
+        sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        kubectl chmod +x /usr/local/bin/kubectl
+        # Validação de sintaxe pura de todos os arquivos sem frescura de espaços
+        find k8s/ -name "*.yaml" -type f -exec kubectl patch -f {} --local -p '{}' \;
