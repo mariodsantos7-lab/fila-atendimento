@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: fila-atendimento
+spec:
+  replicas: 2  # múltiplas réplicas para demonstrar readinessProbe
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: fila-api:v3
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - secretRef:
+            name: db-secret
+        env:
+        - name: REDIS_HOST
+          value: redis
+        readinessProbe:  # só recebe tráfego quando /health retornar 200
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 8
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: fila-atendimento
+spec:
+  type: NodePort
+  selector:
+    app: api
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30000

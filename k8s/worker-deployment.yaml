@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: fila-atendimento
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: worker
+        image: fila-worker:v3
+        imagePullPolicy: Never
+        # sem ports — worker não recebe conexões
+        envFrom:
+        - secretRef:
+            name: db-secret
+        env:
+        - name: REDIS_HOST
+          value: redis

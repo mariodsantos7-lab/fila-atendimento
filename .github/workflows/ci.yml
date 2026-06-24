@@ -1,0 +1,36 @@
+name: 'DevOps CI Pipeline'
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  terraform-k8s-validation:
+    name: 'Validate IaC and K8s Manifests'
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Baixa o código do repositório no servidor do GitHub
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Instala e configura o Terraform para o teste
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.8.5
+
+    # 3. Valida a sintaxe do Terraform
+    - name: Terraform Init & Validate
+      run: |
+        cd terraform
+        terraform init -backend=false
+        terraform validate
+
+    # 4. Instala uma ferramenta de checagem para os arquivos do Kubernetes
+    - name: Validate Kubernetes Manifests
+      run: |
+        sudo apt-get update && sudo apt-get install -y yamllint
+        yamllint k8s/
