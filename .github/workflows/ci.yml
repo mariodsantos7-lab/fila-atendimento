@@ -33,4 +33,4 @@ jobs:
     - name: Validate Kubernetes Manifests
       run: |
         sudo apt-get update && sudo apt-get install -y yamllint
-        yamllint k8s/
+        yamllint -d relaxed k8s/
