@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Baixa o código do repositório no servidor do GitHub
+    # 1. Baixa o código do repositório
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 2. Instala e configura o Terraform para o teste
+    # 2. Instala e configura o Terraform
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
@@ -29,11 +29,18 @@ jobs:
         terraform init -backend=false
         terraform validate
 
-   # 4. Valida se os manifestos estruturais do Kubernetes estão corretos
+    # 4. Instala o Kubectl usando a Action Oficial
+    - name: Setup Kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: 'v1.27.4'
+
+    # 5. Validação de Sintaxe Estrutural dos Manifestos
     - name: Validate Kubernetes Manifests
       run: |
-        sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-        kubectl chmod +x /usr/local/bin/kubectl
-        # Validação de sintaxe pura de todos os arquivos sem frescura de espaços
-        find k8s/ -name "*.yaml" -type f -exec kubectl patch -f {} --local -p '{}' \;
+        kubectl score version || true
+        # Validação puramente estrutural ("Dry-Run" local)
+        find k8s/ -name "*.yaml" -type f | while read -r file; do
+          echo "Validando estruturalmente: $file"
+          kubectl patch -f "$file" --local -p '{}'
+        done
